@@ -146,21 +146,50 @@ document.addEventListener('DOMContentLoaded', function () {
         return apiRequest(`/bookmarks/${movieId}`, { method: 'DELETE' });
     }
 
+    // --- Работа с серверной корзиной ---
+    async function fetchCartFromServer() {
+        try {
+            const data = await apiRequest('/cart');
+            cart = data.map(c => ({ id: c.movie_id, title: c.title, author: c.author || '', price: c.price || '' }));
+            updateStorage();
+            return cart;
+        } catch (e) {
+            return cart;
+        }
+    }
+
+    async function addCartOnServer(movie) {
+        return apiRequest('/cart', {
+            method: 'POST',
+            body: JSON.stringify({ movie_id: movie.id, title: movie.title, author: movie.author, price: movie.price })
+        });
+    }
+
+    async function removeCartOnServer(movieId) {
+        return apiRequest(`/cart/${movieId}`, { method: 'DELETE' });
+    }
+
     // Функция для добавления/удаления из корзины
-    function toggleCart(movie) {
+    async function toggleCart(movie) {
         const index = cart.findIndex(item => item.id === movie.id);
         const button = document.querySelector(`[data-id="${movie.id}"] .cart-btn`);
 
-        if (index === -1) {
-            cart.push(movie);
-            button.textContent = '🛒';
-            alert(`Фильм "${movie.title}" добавлен в корзину!`);
-        } else {
-            cart.splice(index, 1);
-            button.textContent = '🛒';
-            alert(`Фильм "${movie.title}" удалён из корзины!`);
+        try {
+            if (index === -1) {
+                await addCartOnServer(movie);
+                cart.push(movie);
+                button.textContent = '🛒';
+                alert(`Фильм "${movie.title}" добавлен в корзину!`);
+            } else {
+                await removeCartOnServer(movie.id);
+                cart.splice(index, 1);
+                button.textContent = '🛒';
+                alert(`Фильм "${movie.title}" удалён из корзины!`);
+            }
+            updateStorage();
+        } catch (e) {
+            alert(e.message || 'Ошибка работы с корзиной');
         }
-        updateStorage();
     }
 
     // Функция для добавления/удаления из закладок
@@ -210,15 +239,27 @@ document.addEventListener('DOMContentLoaded', function () {
         const cartBtn = card.querySelector('.cart-btn');
         const bookmarkBtn = card.querySelector('.bookmark-btn');
 
-        if (cart.some(item => item.id === movie.id)) {
-            cartBtn.textContent = '🛒';
-        }
+        fetchCartFromServer().then(() => {
+            if (cart.some(item => item.id === movie.id)) {
+                cartBtn.textContent = '🛒';
+            }
+        });
 
         // Синхронизируем закладки с сервером при первом заходе на страницу фильмов
         fetchBookmarksFromServer().then(() => {
             if (bookmarks.some(item => item.id === movie.id)) {
                 bookmarkBtn.textContent = '🔖';
             }
+        });
+    });
+
+    // --- Каталог жанров: переход на страницу жанра ---
+    document.querySelectorAll('#genreList .genre-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const genre = item.getAttribute('data-genre');
+            if (!genre) return;
+            // Страница жанра: /genre-<name>.html
+            window.location.href = `/genre-${genre}.html`;
         });
     });
 });

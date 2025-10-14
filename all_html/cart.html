@@ -66,32 +66,55 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const API_BASE = `${window.location.origin}/api/v1`;
             const container = document.getElementById('cart-items');
 
-            if (cart.length === 0) {
-                container.innerHTML = '<p>Корзина пуста</p>';
-            } else {
-                cart.forEach(movie => {
-                    const item = document.createElement('div');
-                    item.className = 'cart-item';
-                    item.innerHTML = `
-                        <span>${movie.title} — ${movie.price}</span>
-                        <button class="remove-btn" data-id="${movie.id}">Удалить</button>
-                    `;
-                    container.appendChild(item);
-                });
-
-                // Обработчики удаления
-                document.querySelectorAll('.remove-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const id = this.getAttribute('data-id');
-                        cart = cart.filter(movie => movie.id !== id);
-                        localStorage.setItem('cart', JSON.stringify(cart));
-                        location.reload(); // Перезагружаем страницу
-                    });
-                });
+            function authHeaders() {
+                const token = localStorage.getItem('token');
+                return token ? { 'Authorization': `Bearer ${token}` } : {};
             }
+
+            async function loadCart() {
+                container.innerHTML = '<p>Загрузка...</p>';
+                try {
+                    const res = await fetch(`${API_BASE}/cart`, { headers: authHeaders() });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error((data && (data.detail || data.message)) || 'Ошибка');
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        container.innerHTML = '<p>Корзина пуста</p>';
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    data.forEach(c => {
+                        const item = document.createElement('div');
+                        item.className = 'cart-item';
+                        item.innerHTML = `
+                            <span>${c.title} — ${c.price || ''}</span>
+                            <button class="remove-btn" data-id="${c.movie_id}">Удалить</button>
+                        `;
+                        container.appendChild(item);
+                    });
+
+                    document.querySelectorAll('.remove-btn').forEach(button => {
+                        button.addEventListener('click', async function () {
+                            const id = this.getAttribute('data-id');
+                            const res = await fetch(`${API_BASE}/cart/${id}`, { method: 'DELETE', headers: authHeaders() });
+                            if (res.ok) {
+                                loadCart();
+                            } else {
+                                const text = await res.text();
+                                alert(text || 'Не удалось удалить');
+                            }
+                        });
+                    });
+                } catch (e) {
+                    container.innerHTML = '<p>Ошибка загрузки корзины</p>';
+                }
+            }
+
+            loadCart();
         });
     </script>
 </body>

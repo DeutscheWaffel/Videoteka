@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from database import User, Bookmark, database
+from database import User, Bookmark, CartItem, database
 from schemas import UserCreate, UserResponse, Token, UserLogin, AvatarUpdate
 from auth import (
     authenticate_user, 
@@ -140,6 +140,57 @@ async def remove_bookmark(movie_id: str, current_user: User = Depends(get_curren
     deleted = Bookmark.delete().where((Bookmark.user == current_user) & (Bookmark.movie_id == movie_id)).execute()
     if deleted == 0:
         raise HTTPException(status_code=404, detail="Закладка не найдена")
+    return
+
+# --- Корзина ---
+class CartItemCreate(BaseModel):
+    movie_id: str
+    title: str
+    author: str | None = None
+    price: str | None = None
+
+class CartItemResponse(BaseModel):
+    id: int
+    movie_id: str
+    title: str
+    author: str | None = None
+    price: str | None = None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/cart", response_model=List[CartItemResponse])
+async def list_cart(current_user: User = Depends(get_current_active_user)):
+    items = CartItem.select().where(CartItem.user == current_user)
+    return [CartItemResponse.model_validate(item, from_attributes=True) for item in items]
+
+@router.post("/cart", response_model=CartItemResponse, status_code=status.HTTP_201_CREATED)
+async def add_to_cart(payload: CartItemCreate, current_user: User = Depends(get_current_active_user)):
+    try:
+        with database.atomic():
+            item, created = CartItem.get_or_create(
+                user=current_user,
+                movie_id=payload.movie_id,
+                defaults={
+                    'title': payload.title,
+                    'author': payload.author,
+                    'price': payload.price,
+                }
+            )
+            if not created:
+                item.title = payload.title
+                item.author = payload.author
+                item.price = payload.price
+                item.save()
+        return CartItemResponse.model_validate(item, from_attributes=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Не удалось добавить в корзину: {e}")
+
+@router.delete("/cart/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_from_cart(movie_id: str, current_user: User = Depends(get_current_active_user)):
+    deleted = CartItem.delete().where((CartItem.user == current_user) & (CartItem.movie_id == movie_id)).execute()
+    if deleted == 0:
+        raise HTTPException(status_code=404, detail="Товар не найден в корзине")
     return
 
 # --- Смена пароля ---

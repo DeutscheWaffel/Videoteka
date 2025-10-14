@@ -47,10 +47,25 @@ class Bookmark(BaseModel):
             (('user', 'movie_id'), True),
         )
 
+class CartItem(BaseModel):
+    id = AutoField(primary_key=True)
+    user = ForeignKeyField(User, backref='cart_items', on_delete='CASCADE')
+    movie_id = CharField(max_length=100, index=True)
+    title = CharField(max_length=255)
+    author = CharField(max_length=255, null=True)
+    price = CharField(max_length=50, null=True)
+    created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
+
+    class Meta:
+        table_name = 'cart_items'
+        indexes = (
+            (('user', 'movie_id'), True),
+        )
+
 def create_tables():
     """Создает все таблицы в базе данных"""
     database.connect()
-    database.create_tables([User, Bookmark], safe=True)
+    database.create_tables([User, Bookmark, CartItem], safe=True)
     database.close()
 
 def init_database():
@@ -63,6 +78,8 @@ def init_database():
         columns = {row[1] for row in info}
         if 'avatar_base64' not in columns:
             database.execute_sql("ALTER TABLE users ADD COLUMN avatar_base64 TEXT")
+        # Создадим таблицу корзины, если её нет
+        database.create_tables([CartItem], safe=True)
     finally:
         if not database.is_closed():
             database.close()
