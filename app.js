@@ -15,11 +15,22 @@ document.addEventListener('DOMContentLoaded', function () {
     // Делаем функцию доступной глобально для inline-обработчиков в HTML
     window.showForm = showForm;
 
-    const API_BASE = '/api/v1';
+	const API_BASE = (() => {
+		// Если страница открыта как file:// — используем локальный сервер FastAPI
+		if (window.location.protocol === 'file:') {
+			return 'http://localhost:8000/api/v1';
+		}
+		// Иначе — работаем от текущего origin
+		return `${window.location.origin}/api/v1`;
+	})();
 
-    async function apiRequest(path, options = {}) {
-        const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
-        const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+	async function apiRequest(path, options = {}) {
+		const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+		const token = localStorage.getItem('token');
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
         const text = await res.text();
         let data;
         try { data = text ? JSON.parse(text) : {}; } catch { data = { detail: text }; }
@@ -92,8 +103,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             errorDiv.classList.remove('show');
             errorDiv.textContent = '';
-            // После входа — на главную (из корня)
-            window.location.href = '/all_html/home.html';
+			// После входа — на главную (корень статики)
+			window.location.href = '/home.html';
         } catch (err) {
             errorDiv.textContent = err.message || 'Ошибка входа';
             errorDiv.classList.add('show');

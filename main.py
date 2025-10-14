@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from contextlib import asynccontextmanager
 from database import init_database, database
 from routers import router
@@ -43,11 +45,25 @@ async def db_session_middleware(request, call_next):
         if not database.is_closed():
             database.close()
 
+base_dir = Path(__file__).resolve().parent
+
 # Подключение роутеров
 app.include_router(router, prefix="/api/v1")
 
-# Раздача статики и index.html из корня проекта
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+# Отдаём статику: CSS/изображения — отдельными маунтами, затем корень с HTML
+app.mount("/all_css", StaticFiles(directory=str(base_dir / "all_css")), name="all_css")
+app.mount("/images", StaticFiles(directory=str(base_dir / "images")), name="images")
+app.mount("/images_for_buttons", StaticFiles(directory=str(base_dir / "images_for_buttons")), name="images_for_buttons")
+app.mount("/images_for_movies", StaticFiles(directory=str(base_dir / "images_for_movies")), name="images_for_movies")
+
+
+@app.get("/app.js")
+def get_app_js():
+    return FileResponse(str(base_dir / "app.js"))
+
+
+# В самом конце — корневой маунт с HTML, чтобы не перехватывать пути статики выше
+app.mount("/", StaticFiles(directory=str(base_dir / "all_html"), html=True), name="static_html")
 
 @app.get("/health")
 async def health_check():
