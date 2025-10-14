@@ -66,32 +66,55 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
+            const API_BASE = `${window.location.origin}/api/v1`;
             const container = document.getElementById('bookmark-items');
 
-            if (bookmarks.length === 0) {
-                container.innerHTML = '<p>Закладки пусты</p>';
-            } else {
-                bookmarks.forEach(movie => {
-                    const item = document.createElement('div');
-                    item.className = 'bookmark-item';
-                    item.innerHTML = `
-                        <span>${movie.title} — ${movie.author}</span>
-                        <button class="remove-btn" data-id="${movie.id}">Удалить</button>
-                    `;
-                    container.appendChild(item);
-                });
-
-                // Обработчики удаления
-                document.querySelectorAll('.remove-btn').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const id = this.getAttribute('data-id');
-                        bookmarks = bookmarks.filter(movie => movie.id !== id);
-                        localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-                        location.reload(); // Перезагружаем страницу
-                    });
-                });
+            function authHeaders() {
+                const token = localStorage.getItem('token');
+                return token ? { 'Authorization': `Bearer ${token}` } : {};
             }
+
+            async function loadBookmarks() {
+                container.innerHTML = '<p>Загрузка...</p>';
+                try {
+                    const res = await fetch(`${API_BASE}/bookmarks`, { headers: authHeaders() });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error((data && (data.detail || data.message)) || 'Ошибка');
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        container.innerHTML = '<p>Закладки пусты</p>';
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    data.forEach(b => {
+                        const item = document.createElement('div');
+                        item.className = 'bookmark-item';
+                        item.innerHTML = `
+                            <span>${b.title} — ${b.author || ''} ${b.price ? '— ' + b.price : ''}</span>
+                            <button class="remove-btn" data-id="${b.movie_id}">Удалить</button>
+                        `;
+                        container.appendChild(item);
+                    });
+
+                    document.querySelectorAll('.remove-btn').forEach(button => {
+                        button.addEventListener('click', async function () {
+                            const id = this.getAttribute('data-id');
+                            const res = await fetch(`${API_BASE}/bookmarks/${id}`, { method: 'DELETE', headers: authHeaders() });
+                            if (res.ok) {
+                                loadBookmarks();
+                            } else {
+                                const text = await res.text();
+                                alert(text || 'Не удалось удалить');
+                            }
+                        });
+                    });
+                } catch (e) {
+                    container.innerHTML = '<p>Ошибка загрузки закладок</p>';
+                }
+            }
+
+            loadBookmarks();
         });
     </script>
 </body>

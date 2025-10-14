@@ -16,6 +16,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    avatar_base64: str | None = None
     created_at: datetime
     updated_at: datetime
     
@@ -28,3 +29,10 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+class AvatarUpdate(BaseModel):
+    avatar_base64: str
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str

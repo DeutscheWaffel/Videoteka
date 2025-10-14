@@ -121,6 +121,31 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
     }
 
+    // --- Работа с серверными закладками ---
+    async function fetchBookmarksFromServer() {
+        try {
+            const data = await apiRequest('/bookmarks');
+            // Конвертируем к прежнему формату для совместимости UI
+            bookmarks = data.map(b => ({ id: b.movie_id, title: b.title, author: b.author || '', price: b.price || '' }));
+            updateStorage();
+            return bookmarks;
+        } catch (e) {
+            // Если не авторизованы — молча игнорируем, оставляем локальные
+            return bookmarks;
+        }
+    }
+
+    async function addBookmarkOnServer(movie) {
+        return apiRequest('/bookmarks', {
+            method: 'POST',
+            body: JSON.stringify({ movie_id: movie.id, title: movie.title, author: movie.author, price: movie.price })
+        });
+    }
+
+    async function removeBookmarkOnServer(movieId) {
+        return apiRequest(`/bookmarks/${movieId}`, { method: 'DELETE' });
+    }
+
     // Функция для добавления/удаления из корзины
     function toggleCart(movie) {
         const index = cart.findIndex(item => item.id === movie.id);
@@ -139,20 +164,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Функция для добавления/удаления из закладок
-    function toggleBookmark(movie) {
+    async function toggleBookmark(movie) {
         const index = bookmarks.findIndex(item => item.id === movie.id);
         const button = document.querySelector(`[data-id="${movie.id}"] .bookmark-btn`);
 
-        if (index === -1) {
-            bookmarks.push(movie);
-            button.textContent = '🔖';
-            alert(`Фильм "${movie.title}" добавлен в закладки!`);
-        } else {
-            bookmarks.splice(index, 1);
-            button.textContent = '🏷️';
-            alert(`Фильм "${movie.title}" удалён из закладок!`);
+        try {
+            if (index === -1) {
+                await addBookmarkOnServer(movie);
+                bookmarks.push(movie);
+                button.textContent = '🔖';
+            } else {
+                await removeBookmarkOnServer(movie.id);
+                bookmarks.splice(index, 1);
+                button.textContent = '🏷️';
+            }
+            updateStorage();
+        } catch (e) {
+            alert(e.message || 'Ошибка работы с закладками');
         }
-        updateStorage();
     }
 
     // Обработчики кликов для фильмов
@@ -185,8 +214,11 @@ document.addEventListener('DOMContentLoaded', function () {
             cartBtn.textContent = '🛒';
         }
 
-        if (bookmarks.some(item => item.id === movie.id)) {
-            bookmarkBtn.textContent = '🔖';
-        }
+        // Синхронизируем закладки с сервером при первом заходе на страницу фильмов
+        fetchBookmarksFromServer().then(() => {
+            if (bookmarks.some(item => item.id === movie.id)) {
+                bookmarkBtn.textContent = '🔖';
+            }
+        });
     });
 });

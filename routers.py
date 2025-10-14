@@ -1,8 +1,8 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from database import User, database
-from schemas import UserCreate, UserResponse, Token, UserLogin
+from database import User, Bookmark, database
+from schemas import UserCreate, UserResponse, Token, UserLogin, AvatarUpdate
 from auth import (
     authenticate_user, 
     create_access_token, 
@@ -77,8 +77,81 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """Получить информацию о текущем пользователе"""
     return UserResponse.model_validate(current_user, from_attributes=True)
 
-@router.get("/users", response_model=list[UserResponse])
-async def read_users(current_user: User = Depends(get_current_active_user)):
-    """Получить список всех пользователей (только для аутентифицированных пользователей)"""
-    users = User.select()
-    return [UserResponse.model_validate(user, from_attributes=True) for user in users]
+@router.put("/me/avatar", response_model=UserResponse)
+async def update_avatar(payload: AvatarUpdate, current_user: User = Depends(get_current_active_user)):
+    """Обновить аватар текущего пользователя (base64)"""
+    # Небольшая валидация: ограничим размер строки, чтобы не переполнять БД случайно
+    if not payload.avatar_base64 or len(payload.avatar_base64) > 5_000_000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Некорректный размер изображения")
+    current_user.avatar_base64 = payload.avatar_base64
+    current_user.save()
+    return UserResponse.model_validate(current_user, from_attributes=True)
+
+# --- Закладки ---
+from pydantic import BaseModel
+from typing import List
+
+class BookmarkCreate(BaseModel):
+    movie_id: str
+    title: str
+    author: str | None = None
+    price: str | None = None
+
+class BookmarkResponse(BaseModel):
+    id: int
+    movie_id: str
+    title: str
+    author: str | None = None
+    price: str | None = None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/bookmarks", response_model=List[BookmarkResponse])
+async def list_bookmarks(current_user: User = Depends(get_current_active_user)):
+    items = Bookmark.select().where(Bookmark.user == current_user)
+    return [BookmarkResponse.model_validate(item, from_attributes=True) for item in items]
+
+@router.post("/bookmarks", response_model=BookmarkResponse, status_code=status.HTTP_201_CREATED)
+async def add_bookmark(payload: BookmarkCreate, current_user: User = Depends(get_current_active_user)):
+    try:
+        with database.atomic():
+            item, created = Bookmark.get_or_create(
+                user=current_user,
+                movie_id=payload.movie_id,
+                defaults={
+                    'title': payload.title,
+                    'author': payload.author,
+                    'price': payload.price,
+                }
+            )
+            if not created:
+                # обновим данные, если менялись
+                item.title = payload.title
+                item.author = payload.author
+                item.price = payload.price
+                item.save()
+        return BookmarkResponse.model_validate(item, from_attributes=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Не удалось добавить закладку: {e}")
+
+@router.delete("/bookmarks/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_bookmark(movie_id: str, current_user: User = Depends(get_current_active_user)):
+    deleted = Bookmark.delete().where((Bookmark.user == current_user) & (Bookmark.movie_id == movie_id)).execute()
+    if deleted == 0:
+        raise HTTPException(status_code=404, detail="Закладка не найдена")
+    return
+
+# --- Смена пароля ---
+from schemas import PasswordChange
+from auth import verify_password
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(payload: PasswordChange, current_user: User = Depends(get_current_active_user)):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Текущий пароль неверен")
+    if not payload.new_password or len(payload.new_password) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Новый пароль слишком короткий")
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    current_user.save()
+    return

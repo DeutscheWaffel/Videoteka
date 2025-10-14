@@ -9,7 +9,8 @@
     <div class="container">
         <div class="profile-card">
             <div class="profile-header">
-                <img src="/images/eb43e2e34889c891b4f6e66f44aa0dff.jpg" alt="Аватар" class="avatar">
+                <img id="avatarImg" src="/images/eb43e2e34889c891b4f6e66f44aa0dff.jpg" alt="Аватар" class="avatar" style="cursor:pointer">
+                <input id="avatarInput" type="file" accept="image/*" style="display:none" />
                 <h2>Иван Петров</h2>
                 <p>Премиум пользователь</p>
             </div>
@@ -31,7 +32,7 @@
 
             <div class="profile-actions">
                 <button class="profile-btn">Изменить профиль</button>
-                <button class="profile-btn">Сменить пароль</button>
+                <button class="profile-btn change-pass-btn">Сменить пароль</button>
                 <button class="profile-btn logout-btn">Выйти</button>
             </div>
         </div>
@@ -53,6 +54,79 @@
                 localStorage.removeItem('bookmarks');
                 // Перенаправление на главную
                 window.location.href = 'index.html';
+            }
+        });
+
+        const API_BASE = `${window.location.origin}/api/v1`;
+        const avatarImg = document.getElementById('avatarImg');
+        const avatarInput = document.getElementById('avatarInput');
+
+        function authHeaders() {
+            const token = localStorage.getItem('token');
+            return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+        }
+
+        avatarImg.addEventListener('click', () => avatarInput.click());
+
+        // Подтянуть текущий аватар при загрузке страницы
+        (async function loadProfile() {
+            try {
+                const res = await fetch(`${API_BASE}/me`, { headers: authHeaders() });
+                const data = await res.json();
+                if (res.ok && data && data.avatar_base64) {
+                    avatarImg.src = data.avatar_base64;
+                }
+            } catch {}
+        })();
+
+        avatarInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function () {
+                const base64 = reader.result;
+                // Немного защитимся: ограничим размер ~3.5 МБ
+                if (typeof base64 === 'string' && base64.length > 4_000_000) {
+                    alert('Слишком большой файл');
+                    return;
+                }
+                try {
+                    const res = await fetch(`${API_BASE}/me/avatar`, {
+                        method: 'PUT',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ avatar_base64: base64 })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error((data && (data.detail || data.message)) || 'Ошибка');
+                    if (data && data.avatar_base64) {
+                        avatarImg.src = data.avatar_base64;
+                    }
+                } catch (e) {
+                    alert(e.message || 'Не удалось обновить аватар');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Смена пароля
+        document.querySelector('.change-pass-btn').addEventListener('click', async function () {
+            const currentPassword = prompt('Введите текущий пароль:');
+            if (currentPassword === null) return;
+            const newPassword = prompt('Введите новый пароль (мин. 6 символов):');
+            if (newPassword === null) return;
+            try {
+                const res = await fetch(`${API_BASE}/me/password`, {
+                    method: 'PUT',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+                });
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text || 'Не удалось сменить пароль');
+                }
+                alert('Пароль успешно изменён');
+            } catch (e) {
+                alert(e.message || 'Ошибка смены пароля');
             }
         });
     </script>
