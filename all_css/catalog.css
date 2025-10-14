@@ -1,6 +1,6 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-image: url('./images/background_home.jpg');
+    background-image: url('../images/background_home.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -43,27 +43,27 @@ body {
 }
 
 .genre-action {
-    background-image: url('./images_for_buttons/back_boevik.jpg');
+    background-image: url('../images_for_buttons/back_boevik.jpg');
 }
 
 .genre-comedy {
-    background-image: url('./images_for_buttons/comedy_b.jpg');
+    background-image: url('../images_for_buttons/comedy_b.jpg');
 }
 
 .genre-sci-fi {
-    background-image: url('./images_for_buttons/back_fantastic.jpg');
+    background-image: url('../images_for_buttons/back_fantastic.jpg');
 }
 
 .genre-drama {
-    background-image: url('./images_for_buttons/back_drama.jpg');
+    background-image: url('../images_for_buttons/back_drama.jpg');
 }
 
 .genre-horror {
-    background-image: url('./images_for_buttons/horror_b.jpg');
+    background-image: url('../images_for_buttons/horror_b.jpg');
 }
 
 .genre-fantasy {
-    background-image: url('./images_for_buttons/back_fantasy.jpg');
+    background-image: url('../images_for_buttons/back_fantasy.jpg');
 }
 
 .menu-buttons {
