@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль</title>
+    <link rel="stylesheet" href="../all_css/profile.css">
+</head>
+<body>
+    <div class="container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <img src="../images/user_avatar.png" alt="Аватар" class="avatar">
+                <h2>Иван Петров</h2>
+                <p>Премиум пользователь</p>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-item">
+                    <label>Email:</label>
+                    <span>ivan@example.com</span>
+                </div>
+                <div class="info-item">
+                    <label>Дата регистрации:</label>
+                    <span>15.03.2024</span>
+                </div>
+                <div class="info-item">
+                    <label>Подписка до:</label>
+                    <span>15.03.2025</span>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="profile-btn">Изменить профиль</button>
+                <button class="profile-btn">Сменить пароль</button>
+                <button class="profile-btn logout-btn">Выйти</button>
+            </div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="menu-btn" onclick="location.href='home.html'">Главная 🏠</button>
+            <button class="menu-btn" onclick="location.href='catalog.html'">Каталог 📒</button>
+            <button class="menu-btn" onclick="location.href='cart.html'">Корзина 🛒</button>
+            <button class="menu-btn" onclick="location.href='bookmarks.html'">Закладки 🔖</button>
+            <button class="menu-btn" onclick="location.href='profile.html'">Профиль 🚹</button>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.logout-btn').addEventListener('click', function () {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                // Сбросим корзину и закладки
+                localStorage.removeItem('cart');
+                localStorage.removeItem('bookmarks');
+                // Перенаправление на главную
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

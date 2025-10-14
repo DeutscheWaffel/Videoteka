@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Корзина</title>
+    <link rel="stylesheet" href="../all_css/cart.css">
+    <style>
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .menu-buttons {
+            display: flex;
+            gap: 20px;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .menu-btn {
+            width: 200px;
+            padding: 12px;
+            background: linear-gradient(135deg, #433535, #000000);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(62, 62, 62, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <h1>Корзина</h1>
+    <div id="cart-items"></div>
+
+    <div class="container">
+        <div class="menu-buttons">
+            <button class="menu-btn" onclick="location.href='home.html'">Главная 🏠</button>
+            <button class="menu-btn" onclick="location.href='catalog.html'">Каталог 📒</button>
+            <button class="menu-btn" onclick="location.href='cart.html'">Корзина 🛒</button>
+            <button class="menu-btn" onclick="location.href='bookmarks.html'">Закладки 🔖</button>
+            <button class="menu-btn" onclick="location.href='profile.html'">Профиль 🚹</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const container = document.getElementById('cart-items');
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p>Корзина пуста</p>';
+            } else {
+                cart.forEach(movie => {
+                    const item = document.createElement('div');
+                    item.className = 'cart-item';
+                    item.innerHTML = `
+                        <span>${movie.title} — ${movie.price}</span>
+                        <button class="remove-btn" data-id="${movie.id}">Удалить</button>
+                    `;
+                    container.appendChild(item);
+                });
+
+                // Обработчики удаления
+                document.querySelectorAll('.remove-btn').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        cart = cart.filter(movie => movie.id !== id);
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        location.reload(); // Перезагружаем страницу
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
