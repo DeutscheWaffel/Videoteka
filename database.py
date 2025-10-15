@@ -92,7 +92,7 @@ def init_database():
             database.execute_sql("ALTER TABLE users ADD COLUMN avatar_base64 TEXT")
         # Создадим таблицу корзины, если её нет
         database.create_tables([CartItem, Film], safe=True)
-
+ 
         # Миграция: добавить колонку title-ru, если её нет
         film_info = database.execute_sql("PRAGMA table_info(film_list)").fetchall()
         film_columns = {row[1] for row in film_info}
@@ -220,6 +220,54 @@ def init_database():
                         film.title_ru = ru
                         film.price = rub
                         film.save()
+        except Exception:
+            pass
+
+        # Приведение жанров к допустимому набору и сокращение до 25 фильмов (>=3 на жанр)
+        try:
+            # Полная переинициализация списка фильмов согласно требованиям
+            curated = [
+                # action (4)
+                {"title": "The Dark Knight", "title_ru": "Тёмный рыцарь", "author": "Christopher Nolan", "price": "649", "genre_title": "action"},
+                {"title": "Gladiator", "title_ru": "Гладиатор", "author": "Ridley Scott", "price": "499", "genre_title": "action"},
+                {"title": "The Avengers", "title_ru": "Мстители", "author": "Joss Whedon", "price": "549", "genre_title": "action"},
+                {"title": "Terminator 2: Judgment Day", "title_ru": "Терминатор 2: Судный день", "author": "James Cameron", "price": "499", "genre_title": "action"},
+
+                # comedy (4)
+                {"title": "Toy Story", "title_ru": "История игрушек", "author": "John Lasseter", "price": "399", "genre_title": "comedy"},
+                {"title": "Up", "title_ru": "Вверх", "author": "Pete Docter", "price": "399", "genre_title": "comedy"},
+                {"title": "Amélie", "title_ru": "Амели", "author": "Jean-Pierre Jeunet", "price": "449", "genre_title": "comedy"},
+                {"title": "The Lion King", "title_ru": "Король Лев", "author": "Roger Allers, Rob Minkoff", "price": "449", "genre_title": "comedy"},
+
+                # drama (4)
+                {"title": "The Shawshank Redemption", "title_ru": "Побег из Шоушенка", "author": "Frank Darabont", "price": "599", "genre_title": "drama"},
+                {"title": "Fight Club", "title_ru": "Бойцовский клуб", "author": "David Fincher", "price": "449", "genre_title": "drama"},
+                {"title": "Forrest Gump", "title_ru": "Форрест Гамп", "author": "Robert Zemeckis", "price": "449", "genre_title": "drama"},
+                {"title": "The Green Mile", "title_ru": "Зелёная миля", "author": "Frank Darabont", "price": "499", "genre_title": "drama"},
+
+                # fantasy (4)
+                {"title": "The Lord of the Rings: The Fellowship of the Ring", "title_ru": "Властелин колец: Братство Кольца", "author": "Peter Jackson", "price": "779", "genre_title": "fantasy"},
+                {"title": "The Lord of the Rings: The Two Towers", "title_ru": "Властелин колец: Две крепости", "author": "Peter Jackson", "price": "779", "genre_title": "fantasy"},
+                {"title": "The Lord of the Rings: The Return of the King", "title_ru": "Властелин колец: Возвращение короля", "author": "Peter Jackson", "price": "799", "genre_title": "fantasy"},
+                {"title": "Spirited Away", "title_ru": "Унесённые призраками", "author": "Hayao Miyazaki", "price": "499", "genre_title": "fantasy"},
+
+                # horror (4)
+                {"title": "Alien", "title_ru": "Чужой", "author": "Ridley Scott", "price": "499", "genre_title": "horror"},
+                {"title": "The Conjuring", "title_ru": "Заклятие", "author": "James Wan", "price": "499", "genre_title": "horror"},
+                {"title": "The Conjuring 2", "title_ru": "Заклятие 2", "author": "James Wan", "price": "499", "genre_title": "horror"},
+                {"title": "The Silence of the Lambs", "title_ru": "Молчание ягнят", "author": "Jonathan Demme", "price": "499", "genre_title": "horror"},
+
+                # scifi (5)
+                {"title": "Inception", "title_ru": "Начало", "author": "Christopher Nolan", "price": "649", "genre_title": "scifi"},
+                {"title": "The Matrix", "title_ru": "Матрица", "author": "The Wachowskis", "price": "499", "genre_title": "scifi"},
+                {"title": "Interstellar", "title_ru": "Интерстеллар", "author": "Christopher Nolan", "price": "699", "genre_title": "scifi"},
+                {"title": "Star Wars: A New Hope", "title_ru": "Звёздные войны: Новая надежда", "author": "George Lucas", "price": "499", "genre_title": "scifi"},
+                {"title": "The Empire Strikes Back", "title_ru": "Империя наносит ответный удар", "author": "Irvin Kershner", "price": "499", "genre_title": "scifi"},
+            ]
+
+            with database.atomic():
+                Film.delete().execute()
+                Film.insert_many(curated).execute()
         except Exception:
             pass
     finally:

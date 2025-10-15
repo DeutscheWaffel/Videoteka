@@ -2,25 +2,67 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Жанр: Драма</title>
-    <link rel="stylesheet" href="/all_css/home.css">
-    <link rel="stylesheet" href="/all_css/style.css">
+    <title>Драма</title>
     <link rel="stylesheet" href="/all_css/catalog.css">
-    <script src="/app.js" defer></script>
-    <style>
-        .genre-title { margin: 20px auto; font-size: 28px; font-weight: 700; text-align:center; }
-    </style>
-    </head>
+</head>
 <body>
     <div class="container">
-        <div class="genre-title">Драма</div>
+        <h1>Драма</h1>
         <div class="movies-grid">
+            <div class="movie-card">
+                <img src="/images/the_shawshank_redemption.jpg" alt="Побег из Шоушенка">
+                <div class="movie-info">
+                    <div class="movie-title">Побег из Шоушенка</div>
+                    <div class="movie-author">Frank Darabont</div>
+                    <div class="movie-price">599 ₽</div>
+                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
+                    <div class="movie-buttons">
+                        <button class="movie-btn buy-btn">Купить</button>
+                        <div class="bookmark-cart-container">
+                            <button class="movie-btn bookmark-btn">🏷️</button>
+                            <button class="movie-btn cart-btn">🛒</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="movie-card">
+                <img src="/images/forrest_gump.jpg" alt="Форрест Гамп">
+                <div class="movie-info">
+                    <div class="movie-title">Форрест Гамп</div>
+                    <div class="movie-author">Robert Zemeckis</div>
+                    <div class="movie-price">449 ₽</div>
+                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
+                    <div class="movie-buttons">
+                        <button class="movie-btn buy-btn">Купить</button>
+                        <div class="bookmark-cart-container">
+                            <button class="movie-btn bookmark-btn">🏷️</button>
+                            <button class="movie-btn cart-btn">🛒</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="movie-card">
+                <img src="/images/fight_club.jpg" alt="Бойцовский клуб">
+                <div class="movie-info">
+                    <div class="movie-title">Бойцовский клуб</div>
+                    <div class="movie-author">David Fincher</div>
+                    <div class="movie-price">449 ₽</div>
+                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
+                    <div class="movie-buttons">
+                        <button class="movie-btn buy-btn">Купить</button>
+                        <div class="bookmark-cart-container">
+                            <button class="movie-btn bookmark-btn">🏷️</button>
+                            <button class="movie-btn cart-btn">🛒</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="container">
         <div class="menu-buttons">
+            <button class="menu-btn" onclick="location.href='catalog.html'">Назад</button>
             <button class="menu-btn" onclick="location.href='home.html'">Главная 🏠</button>
-            <button class="menu-btn" onclick="location.href='catalog.html'">Каталог 📒</button>
             <button class="menu-btn" onclick="location.href='cart.html'">Корзина 🛒</button>
             <button class="menu-btn" onclick="location.href='bookmarks.html'">Закладки 🔖</button>
             <button class="menu-btn" onclick="location.href='profile.html'">Профиль 🚹</button>
@@ -28,5 +70,3 @@
     </div>
 </body>
 </html>
-
-
