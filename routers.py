@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from database import User, Bookmark, CartItem, database
+from database import User, Bookmark, CartItem, database, Film
 from schemas import UserCreate, UserResponse, Token, UserLogin, AvatarUpdate
 from auth import (
     authenticate_user, 
@@ -206,3 +206,23 @@ async def change_password(payload: PasswordChange, current_user: User = Depends(
     current_user.hashed_password = get_password_hash(payload.new_password)
     current_user.save()
     return
+
+# --- Фильмы по жанрам ---
+class FilmResponse(BaseModel):
+    flim_id: int
+    title: str
+    title_ru: str | None = None
+    author: str | None = None
+    price: str | None = None
+    genre_title: str
+    movie_base64: str | None = None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/genres/{genre}/films", response_model=List[FilmResponse])
+async def get_films_by_genre(genre: str):
+    # Приводим жанр к нижнему регистру для соответствия данным
+    g = genre.strip().lower()
+    q = Film.select().where(Film.genre_title == g)
+    return [FilmResponse.model_validate(f, from_attributes=True) for f in q]

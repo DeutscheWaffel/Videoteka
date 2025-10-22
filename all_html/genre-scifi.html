@@ -8,56 +8,7 @@
 <body>
     <div class="container">
         <h1>Фантастика</h1>
-        <div class="movies-grid">
-            <div class="movie-card">
-                <img src="../images_for_movies/inception.jpg" alt="Начало">
-                <div class="movie-info">
-                    <div class="movie-title">Начало</div>
-                    <div class="movie-author">Christopher Nolan</div>
-                    <div class="movie-price">649 ₽/шт | 44 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="movie-card">
-                <img src="../images_for_movies/the_matrix.jpg" alt="Матрица">
-                <div class="movie-info">
-                    <div class="movie-title">Матрица</div>
-                    <div class="movie-author">The Wachowskis</div>
-                    <div class="movie-price">499 ₽/шт | 70 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="movie-card">
-                <img src="../images_for_movies/interstellar.jpg" alt="Интерстеллар">
-                <div class="movie-info">
-                    <div class="movie-title">Интерстеллар</div>
-                    <div class="movie-author">Christopher Nolan</div>
-                    <div class="movie-price">699 ₽/шт | 68 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="moviesGrid" class="movies-grid"></div>
     </div>
     <div class="container">
         <div class="menu-buttons">
@@ -68,5 +19,29 @@
             <button class="menu-btn" onclick="location.href='profile.html'">Профиль 🚹</button>
         </div>
     </div>
+    <script src="/app.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const grid = document.getElementById('moviesGrid');
+        fetch(`/api/v1/genres/scifi/films`).then(r=>r.json()).then(films=>{
+            grid.innerHTML = films.map(f => `
+            <div class=\"movie-card\" data-id=\"${f.flim_id}\">
+                ${f.movie_base64 ? `<img src=\"${f.movie_base64}\" alt=\"${f.title_ru || f.title}\">` : ''}
+                <div class=\"movie-info\">
+                    <div class=\"movie-title\">${f.title_ru || f.title}</div>
+                    <div class=\"movie-author\">${f.author || ''}</div>
+                    <div class=\"movie-price\">${f.price ? `${f.price} ₽/шт` : ''}</div>
+                    <div class=\"movie-buttons\">
+                        <button class=\"movie-btn buy-btn\">Купить</button>
+                        <div class=\"bookmark-cart-container\">
+                            <button class=\"movie-btn bookmark-btn\">🏷️</button>
+                            <button class=\"movie-btn cart-btn\">🛒</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`).join('');
+        });
+    });
+    </script>
 </body>
 </html>

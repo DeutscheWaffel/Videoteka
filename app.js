@@ -213,45 +213,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Обработчики кликов для фильмов
-    document.querySelectorAll('.movie-card').forEach(card => {
-        const title = card.querySelector('.movie-title').textContent;
-        const author = card.querySelector('.movie-author').textContent;
-        const price = card.querySelector('.movie-price').textContent;
+    // Делегирование событий для динамически загружаемых карточек
+    document.body.addEventListener('click', async (e) => {
+        const cartBtn = e.target.closest('.cart-btn');
+        const bookmarkBtn = e.target.closest('.bookmark-btn');
+        if (!cartBtn && !bookmarkBtn) return;
+
+        const card = e.target.closest('.movie-card');
+        if (!card) return;
+        const title = card.querySelector('.movie-title')?.textContent || '';
+        const author = card.querySelector('.movie-author')?.textContent || '';
+        const price = card.querySelector('.movie-price')?.textContent || '';
         const id = card.getAttribute('data-id');
+        const movie = { id, title, author, price };
 
-        const movie = {
-            id,
-            title,
-            author,
-            price
-        };
-
-        card.querySelector('.cart-btn')?.addEventListener('click', function () {
-            toggleCart(movie);
-        });
-
-        card.querySelector('.bookmark-btn')?.addEventListener('click', function () {
-            toggleBookmark(movie);
-        });
-
-        // Обновляем статус кнопок при загрузке
-        const cartBtn = card.querySelector('.cart-btn');
-        const bookmarkBtn = card.querySelector('.bookmark-btn');
-
-        fetchCartFromServer().then(() => {
-            if (cart.some(item => item.id === movie.id)) {
-                cartBtn.textContent = '🛒';
-            }
-        });
-
-        // Синхронизируем закладки с сервером при первом заходе на страницу фильмов
-        fetchBookmarksFromServer().then(() => {
-            if (bookmarks.some(item => item.id === movie.id)) {
-                bookmarkBtn.textContent = '🔖';
-            }
-        });
+        if (cartBtn) {
+            await toggleCart(movie);
+        }
+        if (bookmarkBtn) {
+            await toggleBookmark(movie);
+        }
     });
+
+    // При загрузке страницы подтянем корзину и закладки для корректной иконки
+    fetchCartFromServer();
+    fetchBookmarksFromServer();
 
     // --- Каталог жанров: переход на страницу жанра ---
     document.querySelectorAll('#genreList .genre-item').forEach(item => {

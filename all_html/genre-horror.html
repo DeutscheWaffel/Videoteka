@@ -8,59 +8,7 @@
 <body>
     <div class="container">
         <h1>Ужасы</h1>
-        <div class="movies-grid">
-            <div class="movie-card">
-                <img src="../images_for_movies/alien.jpg" alt="Чужой">
-                <div class="movie-info">
-                    <div class="movie-title">Чужой</div>
-                    <div class="movie-author">Ridley Scott</div>
-                    <div class="movie-price">499 ₽/шт | 90 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                
-            <div class="movie-card">
-                <img src="../images_for_movies/conjuring.jpg" alt="Заклятие">
-                <div class="movie-info">
-                    <div class="movie-title">Заклятие</div>
-                    <div class="movie-author">Джеймс Ван</div>
-                    <div class="movie-price">899 ₽/шт | 50 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Фильм 3 -->
-            <div class="movie-card">
-                <img src="../images_for_movies/conjuring_2.jpg" alt="Заклятие 2">
-                <div class="movie-info">
-                    <div class="movie-title">Заклятие 2</div>
-                    <div class="movie-author">Джеймс Ван</div>
-                    <div class="movie-price">799 ₽/шт | 60 шт</div>
-                    <div class="movie-rating">⭐⭐⭐⭐</div>
-                    <div class="movie-buttons">
-                        <button class="movie-btn buy-btn">Купить</button>
-                        <div class="bookmark-cart-container">
-                            <button class="movie-btn bookmark-btn">🏷️</button>
-                            <button class="movie-btn cart-btn">🛒</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="moviesGrid" class="movies-grid"></div>
     </div>
     <div class="container">
         <div class="menu-buttons">
@@ -71,5 +19,29 @@
             <button class="menu-btn" onclick="location.href='profile.html'">Профиль 🚹</button>
         </div>
     </div>
+    <script src="/app.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const grid = document.getElementById('moviesGrid');
+        fetch(`/api/v1/genres/horror/films`).then(r=>r.json()).then(films=>{
+            grid.innerHTML = films.map(f => `
+            <div class=\"movie-card\" data-id=\"${f.flim_id}\">
+                ${f.movie_base64 ? `<img src=\"${f.movie_base64}\" alt=\"${f.title_ru || f.title}\">` : ''}
+                <div class=\"movie-info\">
+                    <div class=\"movie-title\">${f.title_ru || f.title}</div>
+                    <div class=\"movie-author\">${f.author || ''}</div>
+                    <div class=\"movie-price\">${f.price ? `${f.price} ₽/шт` : ''}</div>
+                    <div class=\"movie-buttons\">
+                        <button class=\"movie-btn buy-btn\">Купить</button>
+                        <div class=\"bookmark-cart-container\">
+                            <button class=\"movie-btn bookmark-btn\">🏷️</button>
+                            <button class=\"movie-btn cart-btn\">🛒</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`).join('');
+        });
+    });
+    </script>
 </body>
 </html>
