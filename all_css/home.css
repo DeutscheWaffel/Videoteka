@@ -26,12 +26,13 @@ body {
     padding-bottom: 100px; /* место под меню */
     flex: 1;
     max-width: 100%;
+    height: 100%;
 }
 
 /* Оба контейнера с фильмами */
 .movies-grid {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 16px;
     padding: 12px;
     background: rgba(0, 0, 0, 0.3);
@@ -44,11 +45,13 @@ body {
 /* Левый контейнер — ширина на 4 постера */
 .movies-grid:first-child {
     flex: 4; /* ~66% ширины */
+
 }
 
 /* Правый контейнер — ширина на 2 постера */
 .movies-grid:last-child {
     flex: 2; /* ~33% ширины */
+
 }
 
 /* Карточка фильма — фиксированная ширина */
