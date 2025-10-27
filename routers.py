@@ -233,6 +233,20 @@ async def get_films_by_genre(genre: str):
     q = Film.select().where(Film.genre_title == g)
     return [FilmResponse.model_validate(f, from_attributes=True) for f in q]
 
+@router.get("/films/all", response_model=List[FilmResponse])
+async def get_all_films():
+    """Получить все фильмы из базы данных"""
+    films = Film.select()
+    return [FilmResponse.model_validate(f, from_attributes=True) for f in films]
+
+@router.get("/films/random/{count}", response_model=List[FilmResponse])
+async def get_random_films(count: int = 4):
+    """Получить случайные фильмы из базы данных"""
+    import random
+    all_films = list(Film.select())
+    random.shuffle(all_films)
+    return [FilmResponse.model_validate(f, from_attributes=True) for f in all_films[:count]]
+
 # --- Админ функционал ---
 async def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
     """Получает администратора из текущего пользователя"""

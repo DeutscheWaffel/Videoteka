@@ -26,11 +26,13 @@ body {
     padding-bottom: 100px; /* место под меню */
     flex: 1;
     max-width: 100%;
-    height: 100%;
+    height: calc(100vh - 100px);
+    overflow: hidden;
 }
 
-/* Оба контейнера с фильмами */
-.movies-grid {
+/* Левая секция - все фильмы (2/3 экрана) */
+.all-movies-section {
+    flex: 2; /* 2/3 ширины */
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
@@ -38,20 +40,31 @@ body {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 12px;
     overflow-y: auto;
-    flex: 1;
+    min-height: 0;
+    align-content: flex-start;
+}
+
+/* Правая секция - случайные фильмы (1/3 экрана) */
+.random-movies-section {
+    flex: 1; /* 1/3 ширины */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow-y: auto;
     min-height: 0;
 }
 
-/* Левый контейнер — ширина на 4 постера */
-.movies-grid:first-child {
-    flex: 4; /* ~66% ширины */
-
-}
-
-/* Правый контейнер — ширина на 2 постера */
-.movies-grid:last-child {
-    flex: 2; /* ~33% ширины */
-
+.section-title {
+    color: white;
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
 }
 
 /* Карточка фильма — фиксированная ширина */
@@ -66,6 +79,12 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     padding: 12px;
+}
+
+/* Карточки в правой секции - на всю ширину */
+.random-movies-section .movie-card {
+    width: 100%;
+    min-width: 100%;
 }
 
 .movie-card img {

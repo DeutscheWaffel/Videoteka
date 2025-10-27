@@ -248,4 +248,185 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/genre-${genre}.html`;
         });
     });
+
+    // --- Загрузка фильмов на главной странице ---
+    async function loadHomeMovies() {
+        const allMoviesSection = document.getElementById('allMoviesSection');
+        const randomMoviesSection = document.getElementById('randomMoviesSection');
+        
+        if (!allMoviesSection || !randomMoviesSection) return;
+
+        try {
+            // Загружаем все фильмы
+            const allFilms = await apiRequest('/films/all');
+            console.log('Загружено фильмов:', allFilms.length);
+            if (allFilms.length > 0) {
+                console.log('Пример фильма:', {
+                    title: allFilms[0].title,
+                    movie_base64: allFilms[0].movie_base64 ? `base64 данные (${allFilms[0].movie_base64.length} символов)` : 'нет'
+                });
+            }
+            renderMovies(allFilms, allMoviesSection);
+
+            // Загружаем 4 случайных фильма
+            const randomFilms = await apiRequest('/films/random/4');
+            console.log('Загружено случайных фильмов:', randomFilms.length);
+            renderMovies(randomFilms, randomMoviesSection);
+        } catch (e) {
+            console.error('Ошибка загрузки фильмов:', e);
+        }
+    }
+
+    function renderMovies(films, container) {
+        container.innerHTML = '';
+        
+        films.forEach(film => {
+            // Определяем изображение из БД или используем fallback
+            let imageSrc;
+            
+            if (film.movie_base64) {
+                // Проверяем, есть ли уже префикс data:
+                if (film.movie_base64.startsWith('data:image/')) {
+                    imageSrc = film.movie_base64;
+                    console.log(`Используем base64 с префиксом для: ${film.title}`);
+                } else if (film.movie_base64.startsWith('data:')) {
+                    imageSrc = film.movie_base64;
+                    console.log(`Используем base64 data: для: ${film.title}`);
+                } else {
+                    // Добавляем префикс для base64
+                    imageSrc = `data:image/jpeg;base64,${film.movie_base64}`;
+                    console.log(`Добавляем префикс base64 для: ${film.title} (длина: ${film.movie_base64.length})`);
+                }
+            } else {
+                // Fallback на локальные файлы
+                imageSrc = getImagePathForFilm(film.title);
+                console.log(`Используем локальный путь для: ${film.title} -> ${imageSrc}`);
+            }
+            
+            const titleToDisplay = film.title_ru || film.title;
+            const fallbackImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='220'%3E%3Crect fill='%23000' width='160' height='220'/%3E%3Ctext x='50%25' y='50%25' fill='white' text-anchor='middle' dominant-baseline='middle' font-size='14'%3E${encodeURIComponent(titleToDisplay)}%3C/text%3E%3C/svg%3E`;
+            
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            card.setAttribute('data-id', film.flim_id);
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.alt = titleToDisplay;
+            
+            // Двойной fallback
+            img.onerror = function() {
+                console.log('Ошибка загрузки изображения для:', titleToDisplay, 'src:', imageSrc ? imageSrc.substring(0, 50) : 'null');
+                // Пробуем local file path
+                const localPath = getImagePathForFilm(film.title);
+                if (this.src !== localPath && localPath !== imageSrc) {
+                    console.log('Пробуем локальный путь:', localPath);
+                    this.src = localPath;
+                    this.onerror = function() { 
+                        console.log('Используем SVG fallback');
+                        this.src = fallbackImage; 
+                    };
+                } else {
+                    console.log('Используем SVG fallback напрямую');
+                    this.src = fallbackImage;
+                }
+            };
+            
+            card.appendChild(img);
+            
+            const movieInfo = document.createElement('div');
+            movieInfo.className = 'movie-info';
+            
+            const title = document.createElement('div');
+            title.className = 'movie-title';
+            title.textContent = titleToDisplay;
+            
+            const author = document.createElement('div');
+            author.className = 'movie-author';
+            author.textContent = film.author || 'Неизвестный режиссёр';
+            
+            const price = document.createElement('div');
+            price.className = 'movie-price';
+            price.textContent = film.price || 'Цена не указана';
+            
+            const rating = document.createElement('div');
+            rating.className = 'movie-rating';
+            rating.textContent = '⭐⭐⭐⭐⭐';
+            
+            const buttons = document.createElement('div');
+            buttons.className = 'movie-buttons';
+            
+            const buyBtn = document.createElement('button');
+            buyBtn.className = 'movie-btn buy-btn';
+            buyBtn.textContent = 'Купить';
+            
+            const bookmarkCartContainer = document.createElement('div');
+            bookmarkCartContainer.className = 'bookmark-cart-container';
+            
+            const bookmarkBtn = document.createElement('button');
+            bookmarkBtn.className = 'movie-btn bookmark-btn';
+            bookmarkBtn.textContent = '🏷️';
+            
+            const cartBtn = document.createElement('button');
+            cartBtn.className = 'movie-btn cart-btn';
+            cartBtn.textContent = '🛒';
+            
+            bookmarkCartContainer.appendChild(bookmarkBtn);
+            bookmarkCartContainer.appendChild(cartBtn);
+            
+            buttons.appendChild(buyBtn);
+            buttons.appendChild(bookmarkCartContainer);
+            
+            movieInfo.appendChild(title);
+            movieInfo.appendChild(author);
+            movieInfo.appendChild(price);
+            movieInfo.appendChild(rating);
+            movieInfo.appendChild(buttons);
+            
+            card.appendChild(movieInfo);
+            container.appendChild(card);
+        });
+    }
+
+    function getImagePathForFilm(title) {
+        // Маппинг названий фильмов на пути к изображениям (абсолютные пути для FastAPI)
+        const titleMapping = {
+            'The Dark Knight': '/images_for_movies/the_dark_knight.jpg',
+            'Gladiator': '/images_for_movies/gladiator.jpg',
+            'Mad Max: Fury Road': '/images_for_movies/mad_max_fury_road.jpg',
+            'Forrest Gump': '/images_for_movies/forrest_gump.jpg',
+            'Fight Club': '/images_for_movies/fight_club.jpg',
+            'Alien': '/images_for_movies/alien.jpg',
+            'Conjuring': '/images_for_movies/conjuring.jpg',
+            'Conjuring 2': '/images_for_movies/conjuring_2.jpg',
+            'Inception': '/images_for_movies/inception.jpg',
+            'The Matrix': '/images_for_movies/the_matrix.jpg',
+            'Interstellar': '/images_for_movies/interstellar.jpg',
+            'Lord of the Rings: The Return of the King': '/images_for_movies/lord_of_the_rings_the_return_of_the_king.jpg',
+            'Amelie': '/images_for_movies/amelie.jpg',
+            'The Shawshank Redemption': '/images_for_movies/the_shawshank_redemption.jpg',
+            'Star Wars': '/images_for_movies/star_wars.jpg'
+        };
+        
+        // Проверяем точное совпадение
+        if (titleMapping[title]) {
+            return titleMapping[title];
+        }
+        
+        // Проверяем неточное совпадение (case insensitive)
+        const titleLower = title.toLowerCase();
+        for (const [key, value] of Object.entries(titleMapping)) {
+            if (key.toLowerCase() === titleLower) {
+                return value;
+            }
+        }
+        
+        // Возвращаем путь по умолчанию
+        return '/images_for_movies/placeholder.jpg';
+    }
+
+    // Загружаем фильмы при загрузке главной страницы
+    if (document.getElementById('allMoviesSection')) {
+        loadHomeMovies();
+    }
 });
