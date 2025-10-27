@@ -11,27 +11,22 @@
             <div class="profile-header">
                 <img id="avatarImg" src="/images/eb43e2e34889c891b4f6e66f44aa0dff.jpg" alt="Аватар" class="avatar" style="cursor:pointer">
                 <input id="avatarInput" type="file" accept="image/*" style="display:none" />
-                <h2>Иван Петров</h2>
-                <p>Премиум пользователь</p>
+                <h2 id="username">Загрузка...</h2>
+                <p id="userRole">Загрузка...</p>
             </div>
 
             <div class="profile-info">
                 <div class="info-item">
                     <label>Email:</label>
-                    <span>ivan@example.com</span>
+                    <span id="email">Загрузка...</span>
                 </div>
                 <div class="info-item">
                     <label>Дата регистрации:</label>
-                    <span>15.03.2024</span>
-                </div>
-                <div class="info-item">
-                    <label>Подписка до:</label>
-                    <span>15.03.2025</span>
+                    <span id="registrationDate">Загрузка...</span>
                 </div>
             </div>
 
             <div class="profile-actions">
-                <button class="profile-btn">Изменить профиль</button>
                 <button class="profile-btn change-pass-btn">Сменить пароль</button>
                 <button class="profile-btn logout-btn">Выйти</button>
             </div>
@@ -49,9 +44,10 @@
     <script>
         document.querySelector('.logout-btn').addEventListener('click', function () {
             if (confirm('Вы уверены, что хотите выйти?')) {
-                // Сбросим корзину и закладки
+                // Сбросим корзину, закладки и токен авторизации
                 localStorage.removeItem('cart');
                 localStorage.removeItem('bookmarks');
+                localStorage.removeItem('token');
                 // Перенаправление на главную
                 window.location.href = 'index.html';
             }
@@ -68,15 +64,69 @@
 
         avatarImg.addEventListener('click', () => avatarInput.click());
 
-        // Подтянуть текущий аватар при загрузке страницы
-        (async function loadProfile() {
+        // Проверяем авторизацию при загрузке страницы
+        (async function checkAuthAndLoadProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // Если нет токена, перенаправляем на страницу входа
+                alert('Необходимо войти в систему');
+                window.location.href = 'index.html';
+                return;
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/me`, { headers: authHeaders() });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        // Токен недействителен, удаляем его и перенаправляем
+                        localStorage.removeItem('token');
+                        alert('Сессия истекла. Необходимо войти заново.');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    throw new Error('Не удалось загрузить данные профиля');
+                }
                 const data = await res.json();
-                if (res.ok && data && data.avatar_base64) {
+                
+                // Обновляем имя пользователя
+                document.getElementById('username').textContent = data.username || 'Пользователь';
+                
+                // Обновляем email
+                document.getElementById('email').textContent = data.email || 'Не указан';
+                
+                // Обновляем дату регистрации
+                if (data.created_at) {
+                    const date = new Date(data.created_at);
+                    const formattedDate = date.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    document.getElementById('registrationDate').textContent = formattedDate;
+                } else {
+                    document.getElementById('registrationDate').textContent = 'Не указана';
+                }
+                
+                // Обновляем аватар, если есть
+                if (data.avatar_base64) {
                     avatarImg.src = data.avatar_base64;
                 }
-            } catch {}
+                
+                // Обновляем роль пользователя
+                if (data.role) {
+                    const roleText = data.role.name === 'administrator' ? 'Администратор' : 'Пользователь';
+                    document.getElementById('userRole').textContent = roleText;
+                } else {
+                    document.getElementById('userRole').textContent = 'Пользователь';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки профиля:', error);
+                // Если не удалось загрузить данные, показываем сообщение об ошибке
+                document.getElementById('username').textContent = 'Ошибка загрузки';
+                document.getElementById('email').textContent = 'Ошибка загрузки';
+                document.getElementById('registrationDate').textContent = 'Ошибка загрузки';
+                document.getElementById('userRole').textContent = 'Ошибка загрузки';
+            }
         })();
 
         avatarInput.addEventListener('change', function () {

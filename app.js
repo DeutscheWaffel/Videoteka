@@ -178,12 +178,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (index === -1) {
                 await addCartOnServer(movie);
                 cart.push(movie);
-                button.textContent = '🛒';
+                button.textContent = 'Удалить из корзины';
                 alert(`Фильм "${movie.title}" добавлен в корзину!`);
             } else {
                 await removeCartOnServer(movie.id);
                 cart.splice(index, 1);
-                button.textContent = '🛒';
+                button.textContent = 'Добавить в корзину';
                 alert(`Фильм "${movie.title}" удалён из корзины!`);
             }
             updateStorage();
@@ -201,11 +201,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (index === -1) {
                 await addBookmarkOnServer(movie);
                 bookmarks.push(movie);
-                button.textContent = '🔖';
+                button.textContent = 'Удалить из закладок';
             } else {
                 await removeBookmarkOnServer(movie.id);
                 bookmarks.splice(index, 1);
-                button.textContent = '🏷️';
+                button.textContent = 'Добавить в закладки';
             }
             updateStorage();
         } catch (e) {

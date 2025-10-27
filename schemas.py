@@ -13,10 +13,19 @@ class UserLogin(BaseModel):
     username: str = Field(..., description="Имя пользователя или email")
     password: str = Field(..., description="Пароль")
 
+class RoleResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    
+    class Config:
+        from_attributes = True
+
 class UserResponse(UserBase):
     id: int
     is_active: bool
     avatar_base64: str | None = None
+    role: RoleResponse | None = None
     created_at: datetime
     updated_at: datetime
     

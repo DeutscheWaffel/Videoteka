@@ -172,11 +172,12 @@ body {
 }
 
 .bookmark-btn {
-    background-color: #2195f300;
+    background-color: #666666;
+    color: white;
 }
 
 .bookmark-btn:hover {
-    background-color: #be01017a;
+    background-color: #777777;
 }
 
 .cart-btn {

@@ -21,8 +21,29 @@
     </div>
     <script src="/app.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         const grid = document.getElementById('moviesGrid');
+        const token = localStorage.getItem('token');
+        let isAdmin = false;
+
+        // Проверяем, является ли пользователь админом
+        if (token) {
+            try {
+                const res = await fetch(`${window.location.origin}/api/v1/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    isAdmin = data.role && data.role.name === 'administrator';
+                }
+            } catch (e) {
+                console.error('Error checking admin status:', e);
+            }
+        }
+
         fetch(`/api/v1/genres/scifi/films`).then(r=>r.json()).then(films=>{
             grid.innerHTML = films.map(f => `
             <div class=\"movie-card\" data-id=\"${f.flim_id}\">
@@ -32,16 +53,41 @@
                     <div class=\"movie-author\">${f.author || ''}</div>
                     <div class=\"movie-price\">${f.price ? `${f.price} ₽/шт` : ''}</div>
                     <div class=\"movie-buttons\">
-                        <button class=\"movie-btn buy-btn\">Купить</button>
-                        <div class=\"bookmark-cart-container\">
-                            <button class=\"movie-btn bookmark-btn\">🏷️</button>
-                            <button class=\"movie-btn cart-btn\">🛒</button>
+                        <div class=\"bookmark-cart-container\" style=\"display: flex; gap: 10px;\">
+                            <button class=\"movie-btn bookmark-btn\" style=\"flex: 1;\">🏷️</button>
+                            <button class=\"movie-btn cart-btn\" style=\"flex: 1;\">🛒</button>
                         </div>
+                        ${isAdmin ? `<button class=\"movie-btn delete-btn\" style=\"background: #dc3545; margin-top: 10px; width: 100%;\" onclick=\"deleteMovie(${f.flim_id})\">Удалить фильм</button>` : ''}
                     </div>
                 </div>
             </div>`).join('');
         });
     });
+
+    async function deleteMovie(filmId) {
+        if (!confirm('Вы уверены, что хотите удалить этот фильм?')) return;
+        
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${window.location.origin}/api/v1/admin/films/${filmId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (res.ok) {
+                alert('Фильм успешно удален!');
+                location.reload();
+            } else {
+                const error = await res.text();
+                alert('Ошибка: ' + error);
+            }
+        } catch (err) {
+            alert('Ошибка при удалении фильма: ' + err.message);
+        }
+    }
     </script>
 </body>
 </html>

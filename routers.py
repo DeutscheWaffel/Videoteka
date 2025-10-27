@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from database import User, Bookmark, CartItem, database, Film
+from database import User, Bookmark, CartItem, database, Film, Role
 from schemas import UserCreate, UserResponse, Token, UserLogin, AvatarUpdate
 from auth import (
     authenticate_user, 
@@ -35,11 +35,15 @@ async def register(user_data: UserCreate):
         
         # Создаем нового пользователя в транзакции
         hashed_password = get_password_hash(user_data.password)
+        # Получаем роль "user" по умолчанию
+        default_role = Role.get(Role.name == "user")
+        
         with database.atomic():
             user = User.create(
                 username=user_data.username,
                 email=user_data.email,
-                hashed_password=hashed_password
+                hashed_password=hashed_password,
+                role=default_role
             )
             # Повторно читаем из БД, чтобы получить значения полей по умолчанию
             user = User.get(User.id == user.id)
@@ -75,7 +79,9 @@ async def login(user_credentials: UserLogin):
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """Получить информацию о текущем пользователе"""
-    return UserResponse.model_validate(current_user, from_attributes=True)
+    # Загружаем связанную роль
+    user_with_role = User.get(User.id == current_user.id)
+    return UserResponse.model_validate(user_with_role, from_attributes=True)
 
 @router.put("/me/avatar", response_model=UserResponse)
 async def update_avatar(payload: AvatarUpdate, current_user: User = Depends(get_current_active_user)):
@@ -226,3 +232,60 @@ async def get_films_by_genre(genre: str):
     g = genre.strip().lower()
     q = Film.select().where(Film.genre_title == g)
     return [FilmResponse.model_validate(f, from_attributes=True) for f in q]
+
+# --- Админ функционал ---
+async def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Получает администратора из текущего пользователя"""
+    # Проверяем роль пользователя
+    if current_user.role.name != "administrator":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ запрещен. Требуются права администратора"
+        )
+    return current_user
+
+# Схемы для работы с фильмами
+class FilmCreate(BaseModel):
+    title: str
+    title_ru: str | None = None
+    author: str | None = None
+    price: str | None = None
+    genre_title: str
+    movie_base64: str | None = None
+
+@router.post("/admin/films", response_model=FilmResponse, status_code=status.HTTP_201_CREATED)
+async def create_film(film_data: FilmCreate, admin: User = Depends(get_current_admin_user)):
+    """Создать новый фильм (только для админов)"""
+    try:
+        film = Film.create(
+            title=film_data.title,
+            title_ru=film_data.title_ru,
+            author=film_data.author,
+            price=film_data.price,
+            genre_title=film_data.genre_title.lower(),
+            movie_base64=film_data.movie_base64
+        )
+        return FilmResponse.model_validate(film, from_attributes=True)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Не удалось создать фильм: {str(e)}"
+        )
+
+@router.delete("/admin/films/{film_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_film(film_id: int, admin: User = Depends(get_current_admin_user)):
+    """Удалить фильм (только для админов)"""
+    try:
+        film = Film.get(Film.flim_id == film_id)
+        film.delete_instance()
+    except Film.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Фильм не найден"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Не удалось удалить фильм: {str(e)}"
+        )
+    return

@@ -92,7 +92,10 @@
                         item.className = 'cart-item';
                         item.innerHTML = `
                             <span>${c.title} — ${c.price || ''}</span>
-                            <button class="remove-btn" data-id="${c.movie_id}">Удалить</button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="buy-btn" data-id="${c.movie_id}" style="background-color: #27ae60; color: white; border: none; padding: 5px 10px; cursor: pointer;">Купить</button>
+                                <button class="remove-btn" data-id="${c.movie_id}">Удалить</button>
+                            </div>
                         `;
                         container.appendChild(item);
                     });
@@ -106,6 +109,23 @@
                             } else {
                                 const text = await res.text();
                                 alert(text || 'Не удалось удалить');
+                            }
+                        });
+                    });
+
+                    document.querySelectorAll('.buy-btn').forEach(button => {
+                        button.addEventListener('click', async function () {
+                            const id = this.getAttribute('data-id');
+                            const itemData = data.find(c => c.movie_id === id);
+                            if (itemData) {
+                                if (confirm(`Купить "${itemData.title}" за ${itemData.price || 'N/A'}?`)) {
+                                    alert(`Покупка "${itemData.title}" успешно оформлена!`);
+                                    // Опционально: удаляем из корзины после покупки
+                                    const res = await fetch(`${API_BASE}/cart/${id}`, { method: 'DELETE', headers: authHeaders() });
+                                    if (res.ok) {
+                                        loadCart();
+                                    }
+                                }
                             }
                         });
                     });

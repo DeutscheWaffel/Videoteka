@@ -18,6 +18,14 @@ class BaseModel(Model):
     class Meta:
         database = database
 
+class Role(BaseModel):
+    id = AutoField(primary_key=True)
+    name = CharField(max_length=50, unique=True)
+    description = CharField(max_length=255, null=True)
+    
+    class Meta:
+        table_name = 'roles'
+
 class User(BaseModel):
     id = AutoField(primary_key=True)
     username = CharField(max_length=50, unique=True, index=True)
@@ -25,6 +33,7 @@ class User(BaseModel):
     hashed_password = CharField(max_length=255)
     is_active = BooleanField(default=True)
     avatar_base64 = TextField(null=True)
+    role = ForeignKeyField(Role, backref='users', default=1)
     created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
     updated_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
     
@@ -78,19 +87,35 @@ class Film(BaseModel):
 def create_tables():
     """Создает все таблицы в базе данных"""
     database.connect()
-    database.create_tables([User, Bookmark, CartItem, Film], safe=True)
+    database.create_tables([Role, User, Bookmark, CartItem, Film], safe=True)
     database.close()
 
 def init_database():
     """Инициализирует базу данных"""
     create_tables()
-    # Простая миграция: добавим колонку avatar_base64, если её нет
     database.connect(reuse_if_open=True)
     try:
+        # Создаем роли, если их еще нет
+        try:
+            user_role = Role.get(Role.name == "user")
+        except Role.DoesNotExist:
+            Role.create(name="user", description="Обычный пользователь")
+        
+        try:
+            admin_role = Role.get(Role.name == "administrator")
+        except Role.DoesNotExist:
+            Role.create(name="administrator", description="Администратор системы")
+        
+        # Проверяем и добавляем поле role_id, если его нет
         info = database.execute_sql("PRAGMA table_info(users)").fetchall()
         columns = {row[1] for row in info}
+        
+        if 'role_id' not in columns:
+            database.execute_sql("ALTER TABLE users ADD COLUMN role_id INTEGER DEFAULT 1")
+        
         if 'avatar_base64' not in columns:
             database.execute_sql("ALTER TABLE users ADD COLUMN avatar_base64 TEXT")
+        
         # Создадим таблицу корзины, если её нет
         database.create_tables([CartItem, Film], safe=True)
  
