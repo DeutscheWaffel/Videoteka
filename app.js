@@ -349,7 +349,11 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const price = document.createElement('div');
             price.className = 'movie-price';
-            price.textContent = film.price || 'Цена не указана';
+            if (film.price) {
+                price.textContent = `${film.price} ₽/шт`;
+            } else {
+                price.textContent = 'Цена не указана';
+            }
             
             const rating = document.createElement('div');
             rating.className = 'movie-rating';
