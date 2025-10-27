@@ -54,8 +54,8 @@
                     <div class="movie-price">${f.price ? `${f.price} ₽/шт` : ''}</div>
                     <div class="movie-buttons">
                         <div class="bookmark-cart-container" style="display: flex; gap: 10px;">
-                            <button class="movie-btn bookmark-btn" style="flex: 1;">Добавить в закладки</button>
-                            <button class="movie-btn cart-btn" style="flex: 1;">Добавить в корзину</button>
+                            <button class="movie-btn bookmark-btn" style="flex: 1;">🏷️</button>
+                            <button class="movie-btn cart-btn" style="flex: 1;">🛒</button>
                         </div>
                         ${isAdmin ? `<button class="movie-btn delete-btn" style="background: #dc3545; margin-top: 10px; width: 100%;" onclick="deleteMovie(${f.flim_id})">Удалить фильм</button>` : ''}
                     </div>

@@ -48,7 +48,7 @@ body {
 .random-movies-section {
     flex: 1; /* 1/3 ширины */
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 16px;
     padding: 12px;
     background: rgba(0, 0, 0, 0.3);
@@ -82,10 +82,6 @@ body {
 }
 
 /* Карточки в правой секции - на всю ширину */
-.random-movies-section .movie-card {
-    width: 100%;
-    min-width: 100%;
-}
 
 .movie-card img {
     width: 100%;

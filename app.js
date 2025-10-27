@@ -171,19 +171,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Функция для добавления/удаления из корзины
     async function toggleCart(movie) {
-        const index = cart.findIndex(item => item.id === movie.id);
+        const index = cart.findIndex(item => String(item.id) === String(movie.id));
         const button = document.querySelector(`[data-id="${movie.id}"] .cart-btn`);
 
         try {
             if (index === -1) {
                 await addCartOnServer(movie);
                 cart.push(movie);
-                button.textContent = 'Удалить из корзины';
+                button.textContent = '🗑️';
                 alert(`Фильм "${movie.title}" добавлен в корзину!`);
             } else {
                 await removeCartOnServer(movie.id);
                 cart.splice(index, 1);
-                button.textContent = 'Добавить в корзину';
+                button.textContent = '🛒';
                 alert(`Фильм "${movie.title}" удалён из корзины!`);
             }
             updateStorage();
@@ -194,18 +194,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Функция для добавления/удаления из закладок
     async function toggleBookmark(movie) {
-        const index = bookmarks.findIndex(item => item.id === movie.id);
+        const index = bookmarks.findIndex(item => String(item.id) === String(movie.id));
         const button = document.querySelector(`[data-id="${movie.id}"] .bookmark-btn`);
 
         try {
             if (index === -1) {
                 await addBookmarkOnServer(movie);
                 bookmarks.push(movie);
-                button.textContent = 'Удалить из закладок';
+                button.textContent = '🗑️';
+                alert(`Фильм "${movie.title}" добавлен в закладки!`);
             } else {
                 await removeBookmarkOnServer(movie.id);
                 bookmarks.splice(index, 1);
-                button.textContent = 'Добавить в закладки';
+                button.textContent = '🏷️';
+                alert(`Фильм "${movie.title}" удалён из закладок!`);
             }
             updateStorage();
         } catch (e) {
@@ -374,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
             bookmarkCartContainer.appendChild(bookmarkBtn);
             bookmarkCartContainer.appendChild(cartBtn);
             
-            buttons.appendChild(buyBtn);
+            
             buttons.appendChild(bookmarkCartContainer);
             
             movieInfo.appendChild(title);
