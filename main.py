@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 from contextlib import asynccontextmanager
 from database import init_database, database
@@ -23,6 +24,37 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Кастомный обработчик ошибок валидации для более понятных сообщений
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    errors = []
+    for err in exc.errors():
+        loc = err.get("loc", [])
+        field = loc[-1] if loc else "field"
+        err_type = err.get("type")
+        ctx = err.get("ctx", {}) or {}
+
+        # Локализация для часто встречающихся кейсов
+        if field == "password" and err_type == "string_too_short":
+            min_len = ctx.get("min_length", 6)
+            errors.append(f"Пароль должен быть не короче {min_len} символов")
+            continue
+        if field == "username" and err_type == "string_too_short":
+            min_len = ctx.get("min_length", 3)
+            errors.append(f"Имя пользователя должно быть не короче {min_len} символов")
+            continue
+        if field == "email" and err_type == "value_error.email":
+            errors.append("Укажите корректный email")
+            continue
+
+        # Фолбэк — оригинальное сообщение Pydantic (может быть на английском)
+        msg = err.get("msg") or "Ошибка валидации"
+        errors.append(msg)
+
+    # Если одна ошибка — вернём строку, чтобы фронт показал её как текст
+    detail = errors[0] if len(errors) == 1 else errors
+    return JSONResponse(status_code=422, content={"detail": detail})
 
 # Настройка CORS
 app.add_middleware(
